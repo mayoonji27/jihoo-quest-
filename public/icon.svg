@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" fill="#1a0f05" rx="24"/>
+  <rect x="76" y="20" width="40" height="20" fill="#2d8a2d" rx="4"/>
+  <rect x="70" y="36" width="52" height="4" fill="#25731d" rx="2"/>
+  <rect x="72" y="30" width="48" height="36" fill="#f5c5a3" rx="8"/>
+  <rect x="80" y="42" width="8" height="8" fill="#2c1810" rx="2"/>
+  <rect x="104" y="42" width="8" height="8" fill="#2c1810" rx="2"/>
+  <rect x="68" y="38" width="8" height="16" fill="#f5c5a3" rx="4"/>
+  <rect x="116" y="38" width="8" height="16" fill="#f5c5a3" rx="4"/>
+  <rect x="72" y="66" width="48" height="56" fill="#4a7a4a" rx="4"/>
+  <rect x="60" y="68" width="24" height="32" fill="#4169e1" rx="4"/>
+  <rect x="64" y="72" width="16" height="24" fill="#6495ed" rx="2"/>
+  <rect x="70" y="80" width="8" height="8" fill="#ffd700" rx="1"/>
+  <rect x="120" y="52" width="8" height="64" fill="#c0c0c0" rx="2"/>
+  <rect x="108" y="72" width="32" height="8" fill="#8b6914" rx="2"/>
+  <rect x="120" y="44" width="8" height="12" fill="#ffd700" rx="2"/>
+  <rect x="76" y="122" width="16" height="40" fill="#5a4a2a" rx="4"/>
+  <rect x="100" y="122" width="16" height="40" fill="#5a4a2a" rx="4"/>
+  <rect x="74" y="158" width="20" height="12" fill="#3a2a1a" rx="4"/>
+  <rect x="98" y="158" width="20" height="12" fill="#3a2a1a" rx="4"/>
+  <text x="96" y="185" text-anchor="middle" fill="#fcd34d" font-size="12" font-family="sans-serif" font-weight="bold">지후의 전설</text>
+</svg>

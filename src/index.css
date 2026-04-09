@@ -1,0 +1,248 @@
+@import "tailwindcss";
+
+/* ── BotW 색상 시스템 ─────────────────────────── */
+:root {
+  --sky-top:       #5BB8D4;
+  --sky-mid:       #8DD4C8;
+  --sky-horizon:   #C4E8A8;
+  --ground:        #5A8C3E;
+
+  --cream:         #F5EDD8;
+  --cream-dark:    #E8D5B0;
+  --cream-border:  #C8A96A;
+
+  --parchment:     #F0E4C4;
+  --parchment-dark:#D4C090;
+
+  --brown-dark:    #2C1A08;
+  --brown-mid:     #5A3E20;
+  --brown-light:   #8B6B3D;
+
+  --amber:         #D4820A;
+  --amber-light:   #F0A830;
+  --amber-pale:    #FDF0C8;
+
+  --blue-sheikah:  #4A8FBF;
+  --blue-light:    #7BBDE0;
+  --blue-pale:     #D0ECF8;
+
+  --green-hyrule:  #3D7A45;
+  --green-light:   #6AAB56;
+  --green-pale:    #D4EDCC;
+
+  --red-heart:     #D44040;
+  --shadow:        rgba(44, 26, 8, 0.18);
+}
+
+/* ── 기본 리셋 ───────────────────────────────── */
+* {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(180deg,
+    var(--sky-top) 0%,
+    var(--sky-mid) 35%,
+    var(--sky-horizon) 60%,
+    #A8CC80 75%,
+    var(--ground) 100%
+  );
+  background-attachment: fixed;
+  min-height: 100vh;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  color: var(--brown-dark);
+}
+
+#root {
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+/* ── 폰트 ────────────────────────────────────── */
+.font-cinzel { font-family: 'Cinzel', serif; }
+
+/* ── PWA 안전 영역 ───────────────────────────── */
+@supports (padding: env(safe-area-inset-top)) {
+  .safe-top  { padding-top:    env(safe-area-inset-top); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* ── BotW 패널 (양피지/나무판 느낌) ───────────── */
+.botw-panel {
+  background: linear-gradient(145deg, var(--cream) 0%, var(--parchment) 50%, var(--cream-dark) 100%);
+  border: 2px solid var(--cream-border);
+  border-radius: 12px;
+  box-shadow:
+    0 4px 16px var(--shadow),
+    inset 0 1px 0 rgba(255,255,255,0.6),
+    inset 0 -1px 0 rgba(44,26,8,0.08);
+}
+
+.botw-panel-dark {
+  background: linear-gradient(145deg, #2C3E30 0%, #1E2E22 100%);
+  border: 2px solid #4A7040;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* ── BotW 버튼 ───────────────────────────────── */
+.botw-btn {
+  background: linear-gradient(145deg, var(--cream) 0%, var(--parchment) 100%);
+  border: 2px solid var(--cream-border);
+  border-radius: 10px;
+  color: var(--brown-dark);
+  font-weight: 700;
+  box-shadow: 0 3px 8px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.7);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.botw-btn:active {
+  transform: scale(0.96) translateY(1px);
+  box-shadow: 0 1px 4px var(--shadow);
+}
+
+.botw-btn-amber {
+  background: linear-gradient(145deg, var(--amber-light) 0%, var(--amber) 100%);
+  border-color: #A06008;
+  color: #FFF8E8;
+  box-shadow: 0 3px 8px rgba(212,130,10,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.botw-btn-green {
+  background: linear-gradient(145deg, var(--green-light) 0%, var(--green-hyrule) 100%);
+  border-color: #2A5830;
+  color: #F0FFF0;
+  box-shadow: 0 3px 8px rgba(61,122,69,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+/* ── 퀘스트 카드 ─────────────────────────────── */
+.quest-card {
+  background: linear-gradient(135deg,
+    rgba(245,237,216,0.95) 0%,
+    rgba(232,213,176,0.90) 100%
+  );
+  border: 2px solid var(--cream-border);
+  border-radius: 14px;
+  box-shadow:
+    0 3px 12px var(--shadow),
+    inset 0 1px 0 rgba(255,255,255,0.7),
+    inset 0 0 0 1px rgba(255,255,255,0.3);
+  transition: all 0.2s ease;
+}
+.quest-card:active {
+  transform: scale(0.97);
+  box-shadow: 0 1px 6px var(--shadow);
+}
+.quest-card.completed {
+  background: linear-gradient(135deg,
+    rgba(212,237,200,0.85) 0%,
+    rgba(180,220,165,0.80) 100%
+  );
+  border-color: #7AAA60;
+}
+.quest-card.priority {
+  border-color: var(--amber);
+  box-shadow: 0 3px 12px rgba(212,130,10,0.25), inset 0 1px 0 rgba(255,255,255,0.7);
+}
+
+/* ── 하트 컨테이너 ───────────────────────────── */
+.heart-empty { filter: grayscale(0.8) opacity(0.4); }
+.heart-full  { filter: drop-shadow(0 1px 3px rgba(212,64,64,0.5)); }
+
+/* ── 진행바 ──────────────────────────────────── */
+.botw-bar-track {
+  background: rgba(44,26,8,0.12);
+  border: 1px solid rgba(44,26,8,0.2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.botw-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.7s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── 쉐이카 문양 글로우 ──────────────────────── */
+.sheikah-glow {
+  filter: drop-shadow(0 0 8px rgba(74,143,191,0.6));
+}
+
+/* ── 풀잎 애니메이션 ─────────────────────────── */
+@keyframes sway {
+  0%   { transform: rotate(-6deg) scaleX(0.95); }
+  50%  { transform: rotate(6deg)  scaleX(1.05); }
+  100% { transform: rotate(-6deg) scaleX(0.95); }
+}
+@keyframes sway-r {
+  0%   { transform: rotate(8deg)  scaleX(1.0); }
+  50%  { transform: rotate(-5deg) scaleX(0.95); }
+  100% { transform: rotate(8deg)  scaleX(1.0); }
+}
+@keyframes float-leaf {
+  0%   { transform: translateY(0px) rotate(0deg); opacity: 0.7; }
+  33%  { transform: translateY(-12px) rotate(15deg); opacity: 0.9; }
+  66%  { transform: translateY(-6px) rotate(-8deg); opacity: 0.8; }
+  100% { transform: translateY(0px) rotate(0deg); opacity: 0.7; }
+}
+
+.grass-blade {
+  position: absolute;
+  bottom: 0;
+  border-radius: 3px 3px 0 0;
+  transform-origin: bottom center;
+}
+.grass-blade.sway  { animation: sway   2.8s ease-in-out infinite; }
+.grass-blade.sway-r{ animation: sway-r 3.2s ease-in-out infinite; }
+
+/* ── 탭 활성 인디케이터 ─────────────────────── */
+.tab-active-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--amber);
+  margin: 2px auto 0;
+  box-shadow: 0 0 6px var(--amber-light);
+}
+
+/* ── 스크롤바 숨기기 ─────────────────────────── */
+::-webkit-scrollbar { display: none; }
+
+/* ── 퀘스트 완료 팝 애니메이션 ──────────────── */
+@keyframes questPop {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.12); }
+  60%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+.quest-pop { animation: questPop 0.45s ease-out; }
+
+/* ── BotW 타이틀 텍스트 ─────────────────────── */
+.botw-title {
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 3px rgba(44,26,8,0.3), 0 0 20px rgba(212,130,10,0.2);
+}
+
+/* ── 지도 안개 타일 ─────────────────────────── */
+.map-fog {
+  background: linear-gradient(135deg, #2A3530 0%, #1E2820 100%);
+  border-color: #3A4840;
+}
+.map-revealed {
+  background: linear-gradient(135deg, var(--cream) 0%, var(--parchment) 100%);
+  border-color: var(--cream-border);
+}
+
+/* ── 반짝임 애니메이션 ───────────────────────── */
+@keyframes shimmer {
+  0%   { opacity: 0.6; }
+  50%  { opacity: 1.0; }
+  100% { opacity: 0.6; }
+}
+.shimmer { animation: shimmer 2s ease-in-out infinite; }

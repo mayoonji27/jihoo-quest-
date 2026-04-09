@@ -1,0 +1,18 @@
+{
+  "name": "지후의 전설 — 습관의 용사",
+  "short_name": "지후의 전설",
+  "description": "지후를 위한 생활습관 RPG 앱",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a0f05",
+  "theme_color": "#1a0f05",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

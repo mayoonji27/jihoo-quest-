@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useGame } from '../store/GameContext';
-import { INITIAL_BONUS_QUESTS } from '../store/gameData';
+import { INITIAL_QUESTS, INITIAL_BONUS_QUESTS } from '../store/gameData';
 
 function QuestCard({ quest, onComplete }) {
   const [popping, setPopping] = useState(false);
@@ -135,9 +135,9 @@ export default function QuestPage() {
     setTimeout(() => setCompleting(false), 800);
   }
 
-  const morningQuests   = todayQuests.morning;
-  const afternoonQuests = todayQuests.afternoon;
-  const bonusQuests     = todayQuests.bonus || INITIAL_BONUS_QUESTS.map(q => ({ ...q }));
+  const morningQuests   = todayQuests.morning   || INITIAL_QUESTS.morning.map(q => ({ ...q }));
+  const afternoonQuests = todayQuests.afternoon || INITIAL_QUESTS.afternoon.map(q => ({ ...q }));
+  const bonusQuests     = todayQuests.bonus     || INITIAL_BONUS_QUESTS.map(q => ({ ...q }));
 
   const morningDone   = morningQuests.filter(q => q.completed).length;
   const afternoonDone = afternoonQuests.filter(q => q.completed).length;

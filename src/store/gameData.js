@@ -179,7 +179,25 @@ export function loadState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return { ...INITIAL_STATE };
-    return { ...INITIAL_STATE, ...JSON.parse(saved) };
+    const parsed = JSON.parse(saved);
+    return {
+      ...INITIAL_STATE,
+      ...parsed,
+      // 중첩 객체는 깊은 머지: 새 필드가 누락된 경우 초기값으로 보완
+      inventory: { ...INITIAL_STATE.inventory, ...(parsed.inventory || {}) },
+      monsters:  { ...(parsed.monsters  || {}) },
+      weeklyStats: { ...(parsed.weeklyStats || {}) },
+      // 배열 필드는 저장된 값 우선, 없으면 초기값
+      mapFog:           Array.isArray(parsed.mapFog)           ? parsed.mapFog           : [...INITIAL_STATE.mapFog],
+      roomItems:        Array.isArray(parsed.roomItems)        ? parsed.roomItems        : [],
+      coupons:          Array.isArray(parsed.coupons)          ? parsed.coupons          : [],
+      notifications:    Array.isArray(parsed.notifications)    ? parsed.notifications    : [],
+      unlockedRegions:  Array.isArray(parsed.unlockedRegions)  ? parsed.unlockedRegions  : [],
+      pendingUnlockPopup: Array.isArray(parsed.pendingUnlockPopup) ? parsed.pendingUnlockPopup : [],
+      activeBuffs:      Array.isArray(parsed.activeBuffs)      ? parsed.activeBuffs      : [],
+      pendingRecipes:   Array.isArray(parsed.pendingRecipes)   ? parsed.pendingRecipes   : [],
+      cheerMessages:    Array.isArray(parsed.cheerMessages)    ? parsed.cheerMessages    : [],
+    };
   } catch {
     return { ...INITIAL_STATE };
   }

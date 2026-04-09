@@ -1,5 +1,58 @@
-import { useState } from 'react';
+import { useState, Component } from 'react';
 import { GameProvider, useGame } from './store/GameContext';
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, info) {
+    console.error('App Error:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', minHeight: '100vh',
+          background: '#f5edd8', padding: 24, textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: '#5c3d1e', marginBottom: 8 }}>
+            오류가 발생했어요
+          </div>
+          <div style={{ fontSize: 13, color: '#8b6c42', marginBottom: 24 }}>
+            {this.state.error?.message || '알 수 없는 오류'}
+          </div>
+          <button
+            onClick={() => { localStorage.clear(); window.location.reload(); }}
+            style={{
+              background: '#c8a850', color: '#fff', border: 'none',
+              borderRadius: 999, padding: '10px 24px', fontSize: 14,
+              fontWeight: 700, cursor: 'pointer',
+            }}
+          >
+            데이터 초기화 후 재시작
+          </button>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              background: 'transparent', color: '#8b6c42', border: '1px solid #c8a850',
+              borderRadius: 999, padding: '8px 20px', fontSize: 13,
+              fontWeight: 600, cursor: 'pointer', marginTop: 10,
+            }}
+          >
+            새로고침
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import ExpBar from './components/ExpBar';
 import CharacterSprite from './components/CharacterSprite';
 import NotificationOverlay from './components/NotificationOverlay';
@@ -260,8 +313,12 @@ function AppContent() {
 
 export default function App() {
   return (
-    <GameProvider>
-      <AppContent />
-    </GameProvider>
+    <ErrorBoundary>
+      <GameProvider>
+        <ErrorBoundary>
+          <AppContent />
+        </ErrorBoundary>
+      </GameProvider>
+    </ErrorBoundary>
   );
 }

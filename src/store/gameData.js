@@ -237,7 +237,7 @@ export function getCurrentAppWeek(gameStartDate) {
 
 // 주차별 퀘스트 달성률 계산
 export function getWeeklyCompletionRates(questsLog, gameStartDate) {
-  if (!gameStartDate) return {};
+  if (!gameStartDate || !questsLog || typeof questsLog !== 'object') return {};
   const startDate = new Date(gameStartDate);
   startDate.setHours(0, 0, 0, 0);
   const weekData = {};

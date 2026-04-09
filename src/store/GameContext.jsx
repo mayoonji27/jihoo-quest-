@@ -38,7 +38,7 @@ function getPrevDayFullCount(questsLog, days) {
 // ── 헬퍼: 활성 몬스터 HP 감소 처리 ──────────────────────────
 function applyMonsterDamage(state, damage, newLog, todayKey) {
   const active = getActiveMonster({ ...state, questsLog: newLog });
-  if (!active) return {};
+  if (!active) return { monsters: {}, extraExp: 0, goalBonus: 0, defeatNote: [] };
 
   const currentHp   = Math.max((state.monsters[active.regionId]?.currentHp ?? active.maxHp) - damage, 0);
   const defeated    = currentHp <= 0;
@@ -127,7 +127,7 @@ function gameReducer(state, action) {
       const { monsters, extraExp = 0, goalBonus = 0, defeatNote = [] } =
         applyMonsterDamage(state, monsterDmg, newLog, todayKey);
 
-      if (streakBonusApplied && activeMonster) {
+      if (streakBonusApplied && activeMonster && monsters) {
         monsters[activeMonster.regionId] = {
           ...monsters[activeMonster.regionId],
           streakBonusDate: todayKey,
@@ -164,7 +164,7 @@ function gameReducer(state, action) {
         mapFog:      newMapFog,
         weeklyStats,
         goalExpBonus: state.goalExpBonus + goalBonus,
-        monsters:    Object.keys(monsters).length ? monsters : state.monsters,
+        monsters:    (monsters && Object.keys(monsters).length) ? monsters : state.monsters,
         lastSonicBonus: sonicBonus ? todayKey : state.lastSonicBonus,
         notifications: [...(state.notifications || []), ...sonicNotes, ...defeatNote, ...streakNotes],
       };
@@ -221,7 +221,7 @@ function gameReducer(state, action) {
         mapFog:      newMapFog,
         weeklyStats,
         goalExpBonus: state.goalExpBonus + goalBonus,
-        monsters:    Object.keys(monsters).length ? monsters : state.monsters,
+        monsters:    (monsters && Object.keys(monsters).length) ? monsters : state.monsters,
         notifications: [...(state.notifications || []), ...defeatNote],
       };
     }

@@ -146,6 +146,57 @@ export const RECIPES = [
   },
 ];
 
+// === 마인크래프트 방 시스템 ===
+export const MC_ROOM_ITEMS = [
+  // ─ 설치형 ──────────────────────────────────────────────────────────────────────
+  { id:'torch',         name:'횃불',           emoji:'🔦', price:50,   category:'placeable', desc:'방 배경 밝아짐',             effect:'lighting'   },
+  { id:'bed',           name:'침대',           emoji:'🛏️', price:200,  category:'placeable', desc:'취침 퀘스트 EXP +5',         effect:'sleepBonus' },
+  { id:'bookshelf',     name:'책장',           emoji:'📚', price:150,  category:'placeable', desc:'책읽기 퀘스트 EXP +5',        effect:'readBonus'  },
+  { id:'plant',         name:'화분',           emoji:'🪴', price:80,   category:'placeable', desc:'식물 흔들리는 애니메이션',     effect:'plantAnim'  },
+  { id:'diamond_block', name:'다이아 블록',    emoji:'💎', price:800,  category:'placeable', desc:'최고급 블록 장식',            effect:'luxury'     },
+  { id:'chest',         name:'보물 상자',      emoji:'📦', price:150,  category:'placeable', desc:'보물을 담는 상자'                                  },
+  { id:'sword',         name:'벽걸이 명검',    emoji:'⚔️', price:300,  category:'placeable', desc:'용사의 명검 장식'                                  },
+  { id:'window',        name:'창문',           emoji:'🪟', price:120,  category:'placeable', desc:'햇살 들어오는 창문',          effect:'window'     },
+  { id:'candle',        name:'황금 촛대',      emoji:'🕯️', price:180,  category:'placeable', desc:'고급 황금 촛대',              effect:'lighting'   },
+  { id:'trophy',        name:'트로피',         emoji:'🏆', price:400,  category:'placeable', desc:'승리의 상징'                                       },
+  { id:'workbench',     name:'작업대',         emoji:'🪵', price:100,  category:'placeable', desc:'마인크래프트 작업대'                               },
+  // ─ 소모형 ──────────────────────────────────────────────────────────────────────
+  { id:'exp_potion',      name:'경험치 물약',  emoji:'⚗️', price:300,  category:'consumable', desc:'내일 EXP ×2',                effect:'expDouble'             },
+  { id:'teleport_scroll', name:'주문서',       emoji:'📜', price:500,  category:'consumable', desc:'퀘스트 1개 면제 (부모 승인)', effect:'questSkip', requiresApproval:true },
+  { id:'magic_bread',     name:'마법 빵',      emoji:'🍞', price:200,  category:'consumable', desc:'오전 4/5 완료시 소닉 보너스', effect:'sonicEase'             },
+];
+
+export const ROOM_TIERS = [
+  { tier:1, name:'작은 오두막', minExp:0,     cols:3, rows:3, emoji:'🏚️' },
+  { tier:2, name:'나무 집',     minExp:500,   cols:4, rows:4, emoji:'🪵' },
+  { tier:3, name:'돌 집',       minExp:2000,  cols:5, rows:4, emoji:'🪨' },
+  { tier:4, name:'다이아 저택', minExp:10000, cols:5, rows:5, emoji:'💎' },
+];
+
+export function getRoomTier(totalExp) {
+  let cur = ROOM_TIERS[0];
+  for (const t of ROOM_TIERS) {
+    if (totalExp >= t.minExp) cur = t;
+    else break;
+  }
+  return cur;
+}
+
+export const ROOM_FLOORS = [
+  { id:'grass',   name:'잔디',   color1:'#5D8A3C', color2:'#4A7030', unlockTier:1 },
+  { id:'wood',    name:'나무',   color1:'#A0784C', color2:'#8B6840', unlockTier:1 },
+  { id:'stone',   name:'돌',     color1:'#888888', color2:'#777777', unlockTier:2 },
+  { id:'diamond', name:'다이아', color1:'#3CA8C8', color2:'#2A8CB0', unlockTier:3 },
+];
+
+export const ROOM_WALLPAPERS = [
+  { id:'oak',   name:'오크',   color:'#C4934A', unlockTier:1 },
+  { id:'dirt',  name:'흙',     color:'#8B6040', unlockTier:1 },
+  { id:'stone', name:'돌',     color:'#9B9B9B', unlockTier:2 },
+  { id:'wool',  name:'양털',   color:'#D4A0C8', unlockTier:2 },
+  { id:'gold',  name:'황금',   color:'#D4B040', unlockTier:3 },
+];
+
 // 초기 게임 상태
 export const INITIAL_STATE = {
   totalExp: 0,
@@ -170,6 +221,14 @@ export const INITIAL_STATE = {
   fishingUnlocked: false,
   lastFishingDate: null,
   goalExpBonus: 0,        // 가논 처치 시 목표 EXP 감소
+  // ─ 마인크래프트 방 ──────────────────────────────────────────────
+  roomGrid:          {},
+  roomInventory:     {},
+  roomConsumables:   {},
+  roomFloor:         'grass',
+  roomWallpaper:     'oak',
+  pet:               { hunger: 3, treats: 0, lastFed: null, lastTreatDate: null, lastHungerCheck: null },
+  pendingConsumables: [],
 };
 
 // localStorage 키
@@ -197,6 +256,14 @@ export function loadState() {
       activeBuffs:      Array.isArray(parsed.activeBuffs)      ? parsed.activeBuffs      : [],
       pendingRecipes:   Array.isArray(parsed.pendingRecipes)   ? parsed.pendingRecipes   : [],
       cheerMessages:    Array.isArray(parsed.cheerMessages)    ? parsed.cheerMessages    : [],
+      // ─ 마인크래프트 방 ──────────────────────────────────────────
+      roomGrid:         (parsed.roomGrid && !Array.isArray(parsed.roomGrid) && typeof parsed.roomGrid === 'object') ? parsed.roomGrid : {},
+      roomInventory:    (parsed.roomInventory && typeof parsed.roomInventory === 'object' && !Array.isArray(parsed.roomInventory)) ? parsed.roomInventory : {},
+      roomConsumables:  (parsed.roomConsumables && typeof parsed.roomConsumables === 'object' && !Array.isArray(parsed.roomConsumables)) ? parsed.roomConsumables : {},
+      roomFloor:        parsed.roomFloor    || 'grass',
+      roomWallpaper:    parsed.roomWallpaper || 'oak',
+      pet:              { hunger: 3, treats: 0, lastFed: null, lastTreatDate: null, lastHungerCheck: null, ...(parsed.pet || {}) },
+      pendingConsumables: Array.isArray(parsed.pendingConsumables) ? parsed.pendingConsumables : [],
     };
   } catch {
     return { ...INITIAL_STATE };

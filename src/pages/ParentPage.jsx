@@ -193,6 +193,7 @@ export default function ParentPage() {
         <MenuTab active={tab==='stats'}    onClick={() => setTab('stats')}    emoji="📊" label="현황" />
         <MenuTab active={tab==='coupon'}   onClick={() => setTab('coupon')}   emoji="🎟️" label="쿠폰" />
         <MenuTab active={tab==='recipe'}   onClick={() => setTab('recipe')}   emoji="🍲" label="요리" />
+        <MenuTab active={tab==='room'}     onClick={() => setTab('room')}     emoji="🏠" label="방" />
         <MenuTab active={tab==='cheer'}    onClick={() => setTab('cheer')}    emoji="💌" label="응원" />
         <MenuTab active={tab==='settings'} onClick={() => setTab('settings')} emoji="⚙️" label="설정" />
       </div>
@@ -348,6 +349,65 @@ export default function ParentPage() {
                         }}
                       >
                         ✗ 거절
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ─ 방 아이템 승인 탭 ─ */}
+      {tab === 'room' && (
+        <div className="flex flex-col gap-4">
+          <div className="botw-panel p-4">
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--brown-mid)', marginBottom: 4 }}>
+              📜 순간이동 주문서 승인 대기
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--brown-light)', marginBottom: 12 }}>
+              지후가 요청한 퀘스트 면제를 확인하고 승인하세요.
+            </div>
+            {(state.pendingConsumables || []).length === 0 ? (
+              <div style={{ textAlign: 'center', color: 'var(--brown-light)', fontSize: 13, padding: '16px 0' }}>
+                승인 대기 중인 요청이 없어요
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {(state.pendingConsumables || []).map(pending => (
+                  <div key={pending.id}
+                    style={{
+                      background: 'rgba(130,90,30,0.1)', border: '1.5px solid rgba(200,140,60,0.5)',
+                      borderRadius: 12, padding: '12px 14px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--brown-dark)' }}>
+                        📜 순간이동 주문서 — 퀘스트 1개 면제
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--brown-light)' }}>{pending.requestedAt}</div>
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--brown-mid)', marginBottom: 10 }}>
+                      오늘 미완료 퀘스트 1개를 자동으로 완료합니다.
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={() => dispatch({ type: 'APPROVE_CONSUMABLE', payload: { pendingId: pending.id } })}
+                        className="botw-btn-amber botw-btn flex-1 py-2"
+                        style={{ fontSize: 13 }}
+                      >
+                        ✓ 승인
+                      </button>
+                      <button
+                        onClick={() => dispatch({ type: 'REJECT_CONSUMABLE', payload: { pendingId: pending.id } })}
+                        style={{
+                          flex: 1, padding: '8px', borderRadius: 10,
+                          border: '1.5px solid #D07070', background: 'rgba(210,80,80,0.1)',
+                          color: '#B06060', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                        }}
+                      >
+                        ✗ 거절 (아이템 환불)
                       </button>
                     </div>
                   </div>

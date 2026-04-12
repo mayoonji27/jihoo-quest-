@@ -3,13 +3,16 @@ import {
   loadState, saveState, getTodayKey, getWeekKey,
   INITIAL_QUESTS, INITIAL_BONUS_QUESTS, getLevel,
   MAP_REGIONS, RECIPES, checkRegionUnlocks, getActiveMonster,
+  MC_ROOM_ITEMS,
 } from './gameData';
 
 const GameContext = createContext(null);
 
 // ── 헬퍼: 오늘 expMultiplier 버프 활성 여부 ──────────────────
 function getExpMultiplier(activeBuffs, todayKey) {
-  return activeBuffs?.some(b => b.effect === 'expMultiplier' && b.date === todayKey) ? 1.5 : 1;
+  if (activeBuffs?.some(b => b.effect === 'expDouble'     && b.date === todayKey)) return 2;
+  if (activeBuffs?.some(b => b.effect === 'expMultiplier' && b.date === todayKey)) return 1.5;
+  return 1;
 }
 
 // ── 헬퍼: sonicEase 버프 활성 여부 ──────────────────────────
@@ -79,8 +82,12 @@ function gameReducer(state, action) {
       );
 
       // EXP 배율 버프 적용
-      const multiplier    = getExpMultiplier(state.activeBuffs, todayKey);
-      const earnedExp     = Math.round(exp * multiplier);
+      const multiplier = getExpMultiplier(state.activeBuffs, todayKey);
+      let earnedExp    = Math.round(exp * multiplier);
+      // 방 설치 아이템 보너스
+      const placedItems = Object.values(state.roomGrid || {});
+      if (questId === 'sleep' && placedItems.includes('bed'))       earnedExp += 5;
+      if (questId === 'read'  && placedItems.includes('bookshelf')) earnedExp += 5;
 
       // 소닉 보너스
       let bonusExp    = 0;
@@ -156,6 +163,14 @@ function gameReducer(state, action) {
         ? [{ id: Date.now() + 2, type: 'streak', message: '🔥 연속 3일 완주! 몬스터 추가 -3 HP!', timestamp: Date.now() }]
         : [];
 
+      // 펫 먹이 획득 (오전+오후 모두 완료 시 하루 1개)
+      const mFull = newLog[todayKey].morning.every(q => q.completed);
+      const aFull = newLog[todayKey].afternoon.every(q => q.completed);
+      const curPet = state.pet || { hunger: 3, treats: 0, lastFed: null, lastTreatDate: null, lastHungerCheck: null };
+      const newPet = (mFull && aFull && curPet.lastTreatDate !== todayKey)
+        ? { ...curPet, treats: (curPet.treats || 0) + 1, lastTreatDate: todayKey }
+        : curPet;
+
       return {
         ...state,
         totalExp:    state.totalExp + totalGain,
@@ -165,6 +180,7 @@ function gameReducer(state, action) {
         weeklyStats,
         goalExpBonus: state.goalExpBonus + goalBonus,
         monsters:    (monsters && Object.keys(monsters).length) ? monsters : state.monsters,
+        pet:         newPet,
         lastSonicBonus: sonicBonus ? todayKey : state.lastSonicBonus,
         notifications: [...(state.notifications || []), ...sonicNotes, ...defeatNote, ...streakNotes],
       };
@@ -519,6 +535,159 @@ function gameReducer(state, action) {
         questsLog: newLog,
       };
     }
+
+    // ── MC 방: 아이템 구매 ────────────────────────────────────
+    case 'BUY_MC_ITEM': {
+      const { itemId } = action.payload;
+      const item = MC_ROOM_ITEMS.find(i => i.id === itemId);
+      if (!item || state.totalExp < item.price) return state;
+      if (item.category === 'placeable') {
+        return {
+          ...state,
+          totalExp: state.totalExp - item.price,
+          roomInventory: { ...state.roomInventory, [itemId]: (state.roomInventory?.[itemId] || 0) + 1 },
+        };
+      } else {
+        return {
+          ...state,
+          totalExp: state.totalExp - item.price,
+          roomConsumables: { ...state.roomConsumables, [itemId]: (state.roomConsumables?.[itemId] || 0) + 1 },
+        };
+      }
+    }
+
+    // ── MC 방: 그리드에 아이템 배치 ──────────────────────────
+    case 'PLACE_ROOM_ITEM': {
+      const { cellKey, itemId } = action.payload;
+      const inv = state.roomInventory || {};
+      if ((inv[itemId] || 0) <= 0) return state;
+      const grid = { ...state.roomGrid };
+      const existing = grid[cellKey];
+      const newInv = { ...inv, [itemId]: inv[itemId] - 1 };
+      if (existing) newInv[existing] = (newInv[existing] || 0) + 1;
+      grid[cellKey] = itemId;
+      return { ...state, roomGrid: grid, roomInventory: newInv };
+    }
+
+    // ── MC 방: 그리드에서 아이템 제거 ────────────────────────
+    case 'REMOVE_ROOM_ITEM': {
+      const { cellKey } = action.payload;
+      const grid = { ...state.roomGrid };
+      const itemId = grid[cellKey];
+      if (!itemId) return state;
+      delete grid[cellKey];
+      return {
+        ...state,
+        roomGrid: grid,
+        roomInventory: { ...state.roomInventory, [itemId]: (state.roomInventory?.[itemId] || 0) + 1 },
+      };
+    }
+
+    // ── MC 방: 소모형 아이템 사용 ─────────────────────────────
+    case 'USE_CONSUMABLE': {
+      const { itemId } = action.payload;
+      const item = MC_ROOM_ITEMS.find(i => i.id === itemId && i.category === 'consumable');
+      if (!item) return state;
+      const count = (state.roomConsumables || {})[itemId] || 0;
+      if (count <= 0) return state;
+      const newCons = { ...state.roomConsumables, [itemId]: count - 1 };
+
+      if (item.requiresApproval) {
+        return {
+          ...state,
+          roomConsumables: newCons,
+          pendingConsumables: [...(state.pendingConsumables || []), {
+            id: Date.now().toString(),
+            itemId,
+            requestedAt: new Date().toLocaleString('ko-KR'),
+          }],
+        };
+      }
+
+      const todayKey = getTodayKey();
+      const tomorrow = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0]; })();
+      let newBuffs = [...(state.activeBuffs || [])];
+      let newNotes = [...(state.notifications || [])];
+
+      if (item.effect === 'expDouble') {
+        newBuffs = [...newBuffs.filter(b => !(b.effect === 'expDouble' && b.date === tomorrow)), { effect: 'expDouble', date: tomorrow }];
+        newNotes.push({ id: Date.now(), type: 'buff', message: '⚗️ 경험치 물약! 내일 EXP ×2!', timestamp: Date.now() });
+      } else if (item.effect === 'sonicEase') {
+        newBuffs = [...newBuffs.filter(b => !(b.effect === 'sonicEase' && b.date === todayKey)), { effect: 'sonicEase', date: todayKey }];
+        newNotes.push({ id: Date.now(), type: 'buff', message: '🍞 마법 빵! 소닉 보너스 조건 완화!', timestamp: Date.now() });
+      }
+
+      return { ...state, roomConsumables: newCons, activeBuffs: newBuffs, notifications: newNotes };
+    }
+
+    // ── MC 방: 소모형 승인 (부모) ─────────────────────────────
+    case 'APPROVE_CONSUMABLE': {
+      const { pendingId } = action.payload;
+      const pending = (state.pendingConsumables || []).find(p => p.id === pendingId);
+      if (!pending) return state;
+      const newPending = (state.pendingConsumables || []).filter(p => p.id !== pendingId);
+
+      const todayKey = getTodayKey();
+      const todayLog = state.questsLog[todayKey] || {
+        morning:   INITIAL_QUESTS.morning.map(q => ({ ...q })),
+        afternoon: INITIAL_QUESTS.afternoon.map(q => ({ ...q })),
+        bonus:     INITIAL_BONUS_QUESTS.map(q => ({ ...q })),
+      };
+      let targetPeriod = null, targetId = null, targetExp = 0;
+      for (const q of todayLog.morning)   { if (!q.completed) { targetPeriod='morning';   targetId=q.id; targetExp=q.exp; break; } }
+      if (!targetId) for (const q of todayLog.afternoon) { if (!q.completed) { targetPeriod='afternoon'; targetId=q.id; targetExp=q.exp; break; } }
+      if (!targetId) return { ...state, pendingConsumables: newPending };
+
+      const newLog = {
+        ...state.questsLog,
+        [todayKey]: { ...todayLog, [targetPeriod]: todayLog[targetPeriod].map(q => q.id === targetId ? { ...q, completed: true } : q) },
+      };
+      return {
+        ...state,
+        totalExp: state.totalExp + targetExp,
+        questsLog: newLog,
+        pendingConsumables: newPending,
+        notifications: [...(state.notifications || []),
+          { id: Date.now(), type: 'buff', message: '📜 순간이동! 퀘스트 1개 완료!', timestamp: Date.now() }],
+      };
+    }
+
+    // ── MC 방: 소모형 거절 (부모) ─────────────────────────────
+    case 'REJECT_CONSUMABLE': {
+      const { pendingId } = action.payload;
+      const pending = (state.pendingConsumables || []).find(p => p.id === pendingId);
+      if (!pending) return state;
+      return {
+        ...state,
+        roomConsumables: { ...state.roomConsumables, [pending.itemId]: (state.roomConsumables?.[pending.itemId] || 0) + 1 },
+        pendingConsumables: (state.pendingConsumables || []).filter(p => p.id !== pendingId),
+      };
+    }
+
+    // ── MC 방: 펫 먹이주기 ────────────────────────────────────
+    case 'FEED_PET': {
+      const pet = state.pet || { hunger: 3, treats: 0 };
+      if ((pet.treats || 0) <= 0) return state;
+      const todayKey = getTodayKey();
+      return {
+        ...state,
+        pet: { ...pet, hunger: Math.min(5, (pet.hunger || 0) + 1), treats: pet.treats - 1, lastFed: todayKey },
+      };
+    }
+
+    // ── MC 방: 펫 배고픔 일일 감소 ───────────────────────────
+    case 'PET_DAILY_UPDATE': {
+      const { today, daysElapsed } = action.payload;
+      const pet = state.pet || { hunger: 3, treats: 0 };
+      return {
+        ...state,
+        pet: { ...pet, hunger: Math.max(0, (pet.hunger ?? 3) - daysElapsed), lastHungerCheck: today },
+      };
+    }
+
+    // ── MC 방: 바닥/벽지 변경 ────────────────────────────────
+    case 'SET_ROOM_FLOOR':     return { ...state, roomFloor:     action.payload.id };
+    case 'SET_ROOM_WALLPAPER': return { ...state, roomWallpaper: action.payload.id };
 
     // ── 개발자 미리보기: 모든 지역 오픈 ─────────────────────
     case 'DEV_PREVIEW_ON': {

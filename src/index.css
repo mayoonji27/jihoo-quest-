@@ -246,3 +246,28 @@ body {
   100% { opacity: 0.6; }
 }
 .shimmer { animation: shimmer 2s ease-in-out infinite; }
+
+/* ── 마인크래프트 방 애니메이션 ─────────────── */
+@keyframes torchFlicker {
+  0%, 100% { opacity: 1;    filter: drop-shadow(0 0 6px #FFA040); }
+  35%       { opacity: 0.75; filter: drop-shadow(0 0 2px #FF6010); }
+  65%       { opacity: 0.92; filter: drop-shadow(0 0 9px #FFB860); }
+}
+@keyframes mcPop {
+  0%   { transform: scale(0.2); opacity: 0; }
+  65%  { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+@keyframes plantRoomSway {
+  0%, 100% { transform: rotate(-7deg); }
+  50%       { transform: rotate(7deg);  }
+}
+@keyframes petBob {
+  0%, 100% { transform: translateY(0px);  }
+  50%       { transform: translateY(-5px); }
+}
+.torch-flicker  { animation: torchFlicker 1.8s ease-in-out infinite; }
+.mc-item-pop    { animation: mcPop 0.28s ease-out forwards; }
+.plant-sway-room{ animation: plantRoomSway 2.2s ease-in-out infinite; transform-origin: bottom center; display: inline-block; }
+.pet-bob        { animation: petBob 0.9s ease-in-out infinite; }
+.pet-bob-fast   { animation: petBob 0.45s ease-in-out infinite; }

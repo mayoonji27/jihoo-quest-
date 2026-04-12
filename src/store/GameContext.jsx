@@ -469,6 +469,57 @@ function gameReducer(state, action) {
       return { ...state, questsLog: newLog };
     }
 
+    // ── 날짜 소급: 특정 날짜 퀘스트 토글 ────────────────────
+    case 'TOGGLE_QUEST_DATE': {
+      const { period, questId, exp, dateKey } = action.payload;
+      const dayLog = state.questsLog[dateKey] || {
+        morning:   INITIAL_QUESTS.morning.map(q => ({ ...q })),
+        afternoon: INITIAL_QUESTS.afternoon.map(q => ({ ...q })),
+        bonus:     INITIAL_BONUS_QUESTS.map(q => ({ ...q })),
+      };
+      const quest = (dayLog[period] || []).find(q => q.id === questId);
+      if (!quest) return state;
+      const wasCompleted = quest.completed;
+      const updatedPeriod = dayLog[period].map(q =>
+        q.id === questId ? { ...q, completed: !q.completed } : q
+      );
+      const expDelta = wasCompleted ? -exp : exp;
+      const newLog = {
+        ...state.questsLog,
+        [dateKey]: { ...dayLog, [period]: updatedPeriod },
+      };
+      return {
+        ...state,
+        totalExp:  Math.max(0, state.totalExp + expDelta),
+        questsLog: newLog,
+      };
+    }
+
+    case 'TOGGLE_BONUS_QUEST_DATE': {
+      const { questId, exp, dateKey } = action.payload;
+      const dayLog = state.questsLog[dateKey] || {
+        morning:   INITIAL_QUESTS.morning.map(q => ({ ...q })),
+        afternoon: INITIAL_QUESTS.afternoon.map(q => ({ ...q })),
+        bonus:     INITIAL_BONUS_QUESTS.map(q => ({ ...q })),
+      };
+      const quest = (dayLog.bonus || []).find(q => q.id === questId);
+      if (!quest) return state;
+      const wasCompleted = quest.completed;
+      const updatedBonus = (dayLog.bonus || []).map(q =>
+        q.id === questId ? { ...q, completed: !q.completed } : q
+      );
+      const expDelta = wasCompleted ? -exp : exp;
+      const newLog = {
+        ...state.questsLog,
+        [dateKey]: { ...dayLog, bonus: updatedBonus },
+      };
+      return {
+        ...state,
+        totalExp:  Math.max(0, state.totalExp + expDelta),
+        questsLog: newLog,
+      };
+    }
+
     // ── 개발자 미리보기: 모든 지역 오픈 ─────────────────────
     case 'DEV_PREVIEW_ON': {
       const allRegionIds = MAP_REGIONS.map(r => r.id);

@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useGame } from '../store/GameContext';
 import { INITIAL_QUESTS, INITIAL_BONUS_QUESTS } from '../store/gameData';
 
-function QuestCard({ quest, onComplete }) {
+function QuestCard({ quest, onComplete, isPast = false }) {
   const [popping, setPopping] = useState(false);
 
   function handleTap() {
-    if (quest.completed) return;
+    if (quest.completed && !isPast) return;
     setPopping(true);
     setTimeout(() => setPopping(false), 450);
     onComplete(quest.id, quest.exp);
@@ -15,7 +15,7 @@ function QuestCard({ quest, onComplete }) {
   return (
     <button
       onClick={handleTap}
-      disabled={quest.completed}
+      disabled={quest.completed && !isPast}
       className={`quest-card w-full text-left flex items-center gap-3 px-4 py-3.5
         ${quest.completed ? 'completed' : ''}
         ${quest.priority && !quest.completed ? 'priority' : ''}
@@ -53,7 +53,9 @@ function QuestCard({ quest, onComplete }) {
             fontFamily: 'Cinzel, serif',
           }}
         >
-          {quest.completed ? '✦ 완료' : `+${quest.exp} EXP`}
+          {quest.completed
+            ? (isPast ? '✦ 완료 · 탭하면 취소' : '✦ 완료')
+            : `+${quest.exp} EXP`}
         </div>
       </div>
 
@@ -73,9 +75,13 @@ function QuestCard({ quest, onComplete }) {
         }}
       >
         {quest.completed && (
-          <svg width="16" height="16" viewBox="0 0 16 16">
-            <polyline points="2,8 6,12 14,4" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          isPast
+            ? <span style={{ color: 'white', fontSize: 14, lineHeight: 1 }}>↩</span>
+            : (
+              <svg width="16" height="16" viewBox="0 0 16 16">
+                <polyline points="2,8 6,12 14,4" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )
         )}
       </div>
     </button>
@@ -115,29 +121,61 @@ function LogTab({ active, onClick, icon, label, count, total, color }) {
   );
 }
 
+// 날짜 옵션 생성 (오늘 포함 4일)
+function getDateOptions() {
+  const today = new Date();
+  return [0, 1, 2, 3].map(daysAgo => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - daysAgo);
+    const key = d.toISOString().split('T')[0];
+    const label = daysAgo === 0 ? '오늘' : daysAgo === 1 ? '어제' : `${daysAgo}일전`;
+    const shortDate = `${d.getMonth() + 1}/${d.getDate()}`;
+    return { daysAgo, key, label, shortDate };
+  });
+}
+
 export default function QuestPage() {
-  const { todayQuests, dispatch, state } = useGame();
+  const { dispatch, state } = useGame();
   const [tab, setTab] = useState('morning');
   const [completing, setCompleting] = useState(false);
+  const [selectedDaysAgo, setSelectedDaysAgo] = useState(0);
 
-  const todayKey   = new Date().toISOString().split('T')[0];
-  const sonicBonus = state.questsLog[todayKey]?.sonicBonus;
+  const dateOptions = getDateOptions();
+  const selectedDate = dateOptions[selectedDaysAgo];
+  const isToday = selectedDaysAgo === 0;
+
+  // 선택한 날짜의 퀘스트 데이터
+  const dayLog = state.questsLog[selectedDate.key] || {
+    morning:   INITIAL_QUESTS.morning.map(q => ({ ...q })),
+    afternoon: INITIAL_QUESTS.afternoon.map(q => ({ ...q })),
+    bonus:     INITIAL_BONUS_QUESTS.map(q => ({ ...q })),
+  };
+
+  const sonicBonus = dayLog.sonicBonus;
 
   function handleComplete(period, questId, exp) {
-    dispatch({ type: 'COMPLETE_QUEST', payload: { period, questId, exp } });
+    if (isToday) {
+      dispatch({ type: 'COMPLETE_QUEST', payload: { period, questId, exp } });
+    } else {
+      dispatch({ type: 'TOGGLE_QUEST_DATE', payload: { period, questId, exp, dateKey: selectedDate.key } });
+    }
     setCompleting(true);
     setTimeout(() => setCompleting(false), 800);
   }
 
   function handleBonusComplete(questId, exp) {
-    dispatch({ type: 'COMPLETE_BONUS_QUEST', payload: { questId, exp } });
+    if (isToday) {
+      dispatch({ type: 'COMPLETE_BONUS_QUEST', payload: { questId, exp } });
+    } else {
+      dispatch({ type: 'TOGGLE_BONUS_QUEST_DATE', payload: { questId, exp, dateKey: selectedDate.key } });
+    }
     setCompleting(true);
     setTimeout(() => setCompleting(false), 800);
   }
 
-  const morningQuests   = todayQuests.morning   || INITIAL_QUESTS.morning.map(q => ({ ...q }));
-  const afternoonQuests = todayQuests.afternoon || INITIAL_QUESTS.afternoon.map(q => ({ ...q }));
-  const bonusQuests     = todayQuests.bonus     || INITIAL_BONUS_QUESTS.map(q => ({ ...q }));
+  const morningQuests   = dayLog.morning   || INITIAL_QUESTS.morning.map(q => ({ ...q }));
+  const afternoonQuests = dayLog.afternoon || INITIAL_QUESTS.afternoon.map(q => ({ ...q }));
+  const bonusQuests     = dayLog.bonus     || INITIAL_BONUS_QUESTS.map(q => ({ ...q }));
 
   const morningDone   = morningQuests.filter(q => q.completed).length;
   const afternoonDone = afternoonQuests.filter(q => q.completed).length;
@@ -161,6 +199,59 @@ export default function QuestPage() {
         </div>
       )}
 
+      {/* 날짜 선택 */}
+      <div className="flex gap-1.5 mb-4">
+        {dateOptions.map(opt => (
+          <button
+            key={opt.daysAgo}
+            onClick={() => setSelectedDaysAgo(opt.daysAgo)}
+            style={{
+              flex: 1,
+              padding: '7px 4px',
+              borderRadius: 10,
+              border: `2px solid ${selectedDaysAgo === opt.daysAgo ? 'var(--blue-sheikah)' : 'var(--cream-border)'}`,
+              background: selectedDaysAgo === opt.daysAgo
+                ? 'linear-gradient(145deg, rgba(74,143,191,0.2), rgba(123,189,224,0.15))'
+                : 'rgba(245,237,216,0.6)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <div style={{
+              fontWeight: 700,
+              fontSize: 13,
+              color: selectedDaysAgo === opt.daysAgo ? 'var(--blue-sheikah)' : 'var(--brown-mid)',
+            }}>
+              {opt.label}
+            </div>
+            <div style={{
+              fontSize: 10,
+              fontFamily: 'Cinzel, serif',
+              color: selectedDaysAgo === opt.daysAgo ? 'var(--blue-sheikah)' : 'var(--brown-light)',
+              opacity: 0.8,
+              marginTop: 1,
+            }}>
+              {opt.shortDate}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* 소급 편집 안내 배너 */}
+      {!isToday && (
+        <div
+          className="mb-3 px-3 py-2 rounded-xl"
+          style={{
+            border: '1.5px solid rgba(74,143,191,0.4)',
+            background: 'linear-gradient(135deg, rgba(74,143,191,0.08), rgba(123,189,224,0.05))',
+          }}
+        >
+          <span style={{ fontSize: 12, color: 'var(--blue-sheikah)', fontWeight: 600 }}>
+            ✏️ {selectedDate.label} ({selectedDate.key}) 퀘스트 — 완료된 항목을 탭하면 취소됩니다
+          </span>
+        </div>
+      )}
+
       {/* 탭 선택 */}
       <div className="flex gap-1.5 mb-4">
         <LogTab active={tab==='morning'}   onClick={() => setTab('morning')}
@@ -174,7 +265,9 @@ export default function QuestPage() {
       {/* 진행 바 */}
       <div className="mb-4">
         <div className="flex justify-between mb-1" style={{ fontSize: 12, color: 'var(--brown-light)' }}>
-          <span style={{ fontFamily: 'Cinzel, serif', fontWeight: 600 }}>오늘의 진행</span>
+          <span style={{ fontFamily: 'Cinzel, serif', fontWeight: 600 }}>
+            {isToday ? '오늘의 진행' : `${selectedDate.label} 진행`}
+          </span>
           <span style={{ color: pct === 100 ? 'var(--green-hyrule)' : 'var(--brown-mid)', fontWeight: 700 }}>
             {currentDone}/{currentTotal}
           </span>
@@ -217,7 +310,9 @@ export default function QuestPage() {
               ? '⚡ SONIC BONUS 획득! +50 EXP'
               : morningDone === morningQuests.length
                 ? '✦ 오전 퀘스트 완료! 훌륭해요! ✦'
-                : '⚡ 오전 퀘스트 모두 완료하면 SONIC BONUS +50 EXP!'}
+                : isToday
+                  ? '⚡ 오전 퀘스트 모두 완료하면 SONIC BONUS +50 EXP!'
+                  : '오전 퀘스트 현황'}
           </span>
         </div>
       )}
@@ -247,6 +342,7 @@ export default function QuestPage() {
               <QuestCard
                 key={quest.id}
                 quest={quest}
+                isPast={!isToday}
                 onComplete={(id, exp) => handleBonusComplete(id, exp)}
               />
             ))
@@ -254,6 +350,7 @@ export default function QuestPage() {
               <QuestCard
                 key={quest.id}
                 quest={quest}
+                isPast={!isToday}
                 onComplete={(id, exp) => handleComplete(tab, id, exp)}
               />
             ))
